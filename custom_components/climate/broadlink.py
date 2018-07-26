@@ -127,7 +127,7 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
         ircodes_ini = ConfigParser()
         ircodes_ini.read(ircodes_ini_path)
     else:
-        _LOGGER.error("The ini file was not found. (" + ircodes_ini_path + ")")
+        _LOGGER.error("The ini file was not found. (%s)", ircodes_ini_path)
         return
 
     async_add_devices([
@@ -208,10 +208,7 @@ class BroadlinkIRClimate(ClimateDevice):
         else:
             value = self._get_value() if not section == 'off' else 'off_command'
 
-        _LOGGER.debug("sectino={0}, value={1}".format(section, value))
         command = self._commands_ini.get(section, value)
-        _LOGGER.debug("sectino={0}, value={1}, command={2}".format(section, value, command))
-        """
         for retry in range(DEFAULT_RETRY):
             try:
                 payload = b64decode(command)
@@ -224,7 +221,6 @@ class BroadlinkIRClimate(ClimateDevice):
                     if retry == DEFAULT_RETRY-1:
                         _LOGGER.error(
                             "Failed to send packet to Broadlink RM Device")
-        """
 
     @asyncio.coroutine
     def _async_temp_sensor_changed(self, entity_id, old_state, new_state):
@@ -373,4 +369,3 @@ class BroadlinkIRClimate(ClimateDevice):
             self._target_temperature = state.attributes['temperature']
             self._current_operation = state.attributes['operation_mode']
             self._current_fan_mode = state.attributes['fan_mode']
-            # self._current_swing_mode = state.attributes['swing_mode']
