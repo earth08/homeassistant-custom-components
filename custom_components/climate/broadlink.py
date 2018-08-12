@@ -46,6 +46,8 @@ CONF_DEFAULT_SWING_MODE = 'default_swing_mode'
 CONF_MIN_TEMP_DRY = 'min_temp_dry'
 CONF_MAX_TEMP_DRY = 'max_temp_dry'
 CONF_TARGET_TEMP_DRY = 'target_temp_dry'
+CONF_FAN_MODES_DRY = 'fan_modes_dry'
+CONF_DEFAULT_FAN_MODE_DRY = 'default_fan_mode_dry'
 CONF_TARGET_TEMP_STEP_DRY = 'target_temp_step_dry'
 
 CONF_DEFAULT_OPERATION_FROM_IDLE = 'default_operation_from_idle'
@@ -125,6 +127,8 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     max_temp_dry = config.get(CONF_MAX_TEMP_DRY)
     target_temp_dry = config.get(CONF_TARGET_TEMP_DRY)
     target_temp_step_dry = config.get(CONF_TARGET_TEMP_STEP_DRY)
+    fan_modes_dry = config.get(CONF_FAN_MODES_DRY)
+    default_fan_mode_dry = config.get(CONF_DEFAULT_FAN_MODE_DRY)
 
     temp_sensor_entity_id = config.get(CONF_TEMP_SENSOR)
     operation_list = config.get(CONF_CUSTOMIZE).get(
@@ -166,9 +170,10 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
         BroadlinkIRClimate(
             hass, name, broadlink_device, ircodes_ini, min_temp, max_temp,
             target_temp, target_temp_step, min_temp_dry, max_temp_dry,
-            target_temp_dry, target_temp_step_dry, temp_sensor_entity_id,
-            operation_list, fan_list, swing_list, default_operation,
-            default_fan_mode, default_swing_mode, default_operation_from_idle)
+            target_temp_dry, target_temp_step_dry, fan_modes_dry,
+            default_fan_mode_dry, temp_sensor_entity_id, operation_list,
+            fan_list, swing_list, default_operation, default_fan_mode,
+            default_swing_mode, default_operation_from_idle)
     ])
 
 
@@ -178,8 +183,9 @@ class BroadlinkIRClimate(ClimateDevice):
     def __init__(self, hass, name, broadlink_device, ircodes_ini, min_temp,
                  max_temp, target_temp, target_temp_step, min_temp_dry,
                  max_temp_dry, target_temp_dry, target_temp_step_dry,
-                 temp_sensor_entity_id, operation_list, fan_list, swing_list,
-                 default_operation, default_fan_mode, default_swing_mode,
+                 fan_modes_dry, default_fan_mode_dry, temp_sensor_entity_id,
+                 operation_list, fan_list, swing_list, default_operation,
+                 default_fan_mode, default_swing_mode,
                  default_operation_from_idle):
         """Initialize the Broadlink IR Climate device."""
         self.hass = hass
@@ -187,6 +193,10 @@ class BroadlinkIRClimate(ClimateDevice):
 
         self._non_dry_temp = (min_temp, max_temp, target_temp_step)
         self._dry_temp = (min_temp_dry, max_temp_dry, target_temp_step_dry)
+        self._fan_list_non_dry = fan_list
+        self._fan_list_dry = fan_modes_dry.split(',')\
+                             if fan_modes_dry else None
+        self._prev_op_fan_mode = default_fan_mode_dry
 
         self._min_temp, self._max_temp,\
             self._target_temperature_step = self._non_dry_temp
@@ -392,6 +402,16 @@ class BroadlinkIRClimate(ClimateDevice):
 
     def set_operation_mode(self, operation_mode):
         """Set new target temperature."""
+        if self._fan_list_dry:
+            if operation_mode == 'dry':
+                self._prev_op_fan_mode, self._current_fan_mode =\
+                    self._current_fan_mode, self._prev_op_fan_mode
+                self._fan_list = self._fan_list_dry
+            elif self._current_operation == 'dry':
+                self._prev_op_fan_mode, self._current_fan_mode =\
+                    self._current_fan_mode, self._prev_op_fan_mode
+                self._fan_list = self._fan_list_non_dry
+        
         if all(self._dry_temp):
             if operation_mode == 'dry':
                 # new operation mode is 'dry' with custom temperature setup
