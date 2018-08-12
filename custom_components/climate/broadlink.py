@@ -191,11 +191,15 @@ class BroadlinkIRClimate(ClimateDevice):
                 self._async_update_current_temp(sensor_state)
 
     def _get_value(self):
-        value = self._current_fan_mode.lower() +\
-                (('_' + self._current_swing_mode) if self._swing_list else '')\
-                + '_' + str(int(self._target_temperature)\
-                            if self.target_temperature == int(self.target_temperature)\
-                            else self._target_temperature).replace('.', '_')
+        swing_mode = ''
+        if self._swing_list:
+            swing_mode = '' if self._current_swing_mode == 'off'\
+                         else ('_' + self._current_swing_mode)
+        temp = '_' + str(int(self._target_temperature)
+                         if self.target_temperature ==
+                         int(self.target_temperature)
+                         else self._target_temperature).replace('.', '_')
+        value = self._current_fan_mode.lower() + swing_mode + temp
         return value
 
     def send_ir(self):
