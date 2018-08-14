@@ -190,7 +190,7 @@ class BroadlinkIRClimate(ClimateDevice):
             if sensor_state:
                 self._async_update_current_temp(sensor_state)
 
-    def _get_value(self):
+    def _get_value(self, section):
         swing_mode = ''
         if self._swing_list:
             swing_mode = '' if self._current_swing_mode == 'off'\
@@ -200,18 +200,25 @@ class BroadlinkIRClimate(ClimateDevice):
                          int(self.target_temperature)
                          else self._target_temperature).replace('.', '_')
         value = self._current_fan_mode.lower() + swing_mode + temp
+        if value not in self._commands_ini[section]:
+            value = self._current_fan_mode.lower() + temp
+            if 'off' in self._swing_list: 
+                self._current_swing_mode = 'off'
+            elif 'auto' in self._swing_list: 
+                self._current_swing_mode = 'auto'
+
         return value
 
     def send_ir(self):
         section = self._current_operation.lower()
 
-        if section == 'off':
-            value = 'off_command'
-        elif section == 'idle':
+        if section == 'idle':
             value = 'idle_command'
         else:
-            value = self._get_value() if not section == 'off' else 'off_command'
+            value = self._get_value(section) if not section == 'off'\
+                else 'off_command'
 
+        _LOGGER.error("section=(%s), value=(%s)", section, value)
         command = self._commands_ini.get(section, value)
         for retry in range(DEFAULT_RETRY):
             try:
@@ -335,7 +342,8 @@ class BroadlinkIRClimate(ClimateDevice):
         if kwargs.get(ATTR_TEMPERATURE) is not None:
             self._target_temperature = kwargs.get(ATTR_TEMPERATURE)
 
-            if not (self._current_operation.lower() == 'off' or self._current_operation.lower() == 'idle'):
+            if not (self._current_operation.lower() == 'off'
+                    or self._current_operation.lower() == 'idle'):
                 self.send_ir()
             elif self._default_operation_from_idle is not None:
                 self.set_operation_mode(self._default_operation_from_idle)
@@ -346,7 +354,8 @@ class BroadlinkIRClimate(ClimateDevice):
         """Set new target temperature."""
         self._current_fan_mode = fan
 
-        if not (self._current_operation.lower() == 'off' or self._current_operation.lower() == 'idle'):
+        if not (self._current_operation.lower() == 'off'
+                or self._current_operation.lower() == 'idle'):
             self.send_ir()
 
         self.schedule_update_ha_state()
@@ -373,3 +382,4 @@ class BroadlinkIRClimate(ClimateDevice):
             self._target_temperature = state.attributes['temperature']
             self._current_operation = state.attributes['operation_mode']
             self._current_fan_mode = state.attributes['fan_mode']
+            self._current_swing_mode = state.attributes['swing_mode']
