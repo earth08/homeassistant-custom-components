@@ -17,6 +17,7 @@
 **customize** (Optional): List of options to customize.<br />
   **- operations** (Optional*): List of operation modes (default: idle, heat, cool, auto)<br />
   **- fan_modes** (Optional*): List of fan modes (default: low, mid, high, auto)<br />
+  **- swing_modes** (Optional*): List of swing modes. It doesn't have default values. Please omit if your device doesn't support<br />
   
 #### Example:
 ```
@@ -43,6 +44,12 @@ climate:
         - mid
         - high
         - auto
+      swing_modes:
+        - auto
+        - swing
+        - high
+        - mid
+        - low
 ```
 
 
