@@ -218,7 +218,6 @@ class BroadlinkIRClimate(ClimateDevice):
             value = self._get_value(section) if not section == 'off'\
                 else 'off_command'
 
-        _LOGGER.error("section=(%s), value=(%s)", section, value)
         command = self._commands_ini.get(section, value)
         for retry in range(DEFAULT_RETRY):
             try:
