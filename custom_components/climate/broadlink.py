@@ -200,6 +200,7 @@ class BroadlinkIRClimate(ClimateDevice):
                          int(self.target_temperature)
                          else self._target_temperature).replace('.', '_')
         value = self._current_fan_mode.lower() + swing_mode + temp
+        _LOGGER.debug("value=(%s)", value)
         if value not in self._commands_ini[section]:
             value = self._current_fan_mode.lower() + temp
             if 'off' in self._swing_list: 
@@ -207,6 +208,7 @@ class BroadlinkIRClimate(ClimateDevice):
             elif 'auto' in self._swing_list: 
                 self._current_swing_mode = 'auto'
 
+        _LOGGER.debug("value=(%s)", value)
         return value
 
     def send_ir(self):
@@ -218,6 +220,7 @@ class BroadlinkIRClimate(ClimateDevice):
             value = self._get_value(section) if not section == 'off'\
                 else 'off_command'
 
+        _LOGGER.debug("section=(%s), value=(%s)", section, value)
         command = self._commands_ini.get(section, value)
         for retry in range(DEFAULT_RETRY):
             try:
